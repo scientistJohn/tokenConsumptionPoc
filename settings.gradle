@@ -1,0 +1,5 @@
+rootProject.name = 'tokenConsumtionPoc'
+include 'issuer'
+include 'test'
+include 'consumer'
+
