@@ -49,14 +49,14 @@ public class TestCases {
         httpClient = HttpClients.createDefault();
 
         Properties producerProps = new Properties();
-        producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092");
+        producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092,localhost:29092,localhost:39092");
         producerProps.put(ProducerConfig.CLIENT_ID_CONFIG, "test");
         producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         workRequestProducer = new KafkaProducer<>(producerProps);
 
         Properties consumerProps = new Properties();
-        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092");
+        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092,localhost:29092,localhost:39092");
         consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "test");
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, WorkDoneDtoDeserializer.class.getName());
@@ -81,14 +81,15 @@ public class TestCases {
     public void treeConsumerWorkInParallel() throws Exception {
         ZonedDateTime from = ZonedDateTime.now();
         ZonedDateTime to = ZonedDateTime.now().plusMinutes(1L);
-        final long[] usage = {90};
+        final long[] usage = {100};
         CreateTokenRequest request = getRequest(from, to, usage[0]);
         String token = httpClient.execute(createRequest(request), tokenResponseHandler);
         for (int i = 0; i < usage[0]; i++) {
-            workRequestProducer.send(new ProducerRecord<>("work-request-topic", Integer.valueOf(i).toString(), token));
+            workRequestProducer.send(new ProducerRecord<>("work-request-topic", 0, Integer.valueOf(i).toString(), token));
+            Thread.sleep(2000l);
         }
         Map<String, Integer> consumersUsage = new HashMap<>();
-        while (usage[0] >= 0) {
+        while (usage[0] > 0) {
             workDoneConsumer.poll(Duration.ofSeconds(2L))
                     .iterator()
                     .forEachRemaining(r -> {

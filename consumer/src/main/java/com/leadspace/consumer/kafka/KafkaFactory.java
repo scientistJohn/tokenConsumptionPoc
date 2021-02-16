@@ -11,7 +11,6 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StoreQueryParameters;
 import org.apache.kafka.streams.StreamsBuilder;
@@ -21,7 +20,6 @@ import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.TimeWindows;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyWindowStore;
-import org.apache.kafka.streams.state.WindowStore;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -41,11 +39,9 @@ public final class KafkaFactory {
             final StreamsBuilder builder = new StreamsBuilder();
 
             builder.stream(config.getUsedTokenTopic(), Consumed.with(Serdes.String(), Serdes.String()))
-                    .groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
+                    .groupBy((key, value) -> key, Grouped.with(Serdes.String(), Serdes.String()))
                     .windowedBy(TimeWindows.of(Duration.ofMinutes(1L)))
-                    .count(Materialized.<String, Long, WindowStore<Bytes, byte[]>>as(config.getUsageStoreName())
-                            .withKeySerde(Serdes.String())
-                            .withValueSerde(Serdes.Long()));
+                    .count(Materialized.as(config.getUsageStoreName()));
 
             final KafkaStreams streams = new KafkaStreams(builder.build(), getStreamsProps(config));
             CompletableFuture<KafkaStreams> startedStreams = new CompletableFuture<>();
@@ -61,6 +57,7 @@ public final class KafkaFactory {
 
             startedStreams.get();
             ReadOnlyWindowStore<String, Long> store = streams.store(StoreQueryParameters.fromNameAndType(config.getUsageStoreName(), QueryableStoreTypes.windowStore()));
+            //store.
             return new UsageStore(store);
         } catch (Exception e) {
             e.printStackTrace();
