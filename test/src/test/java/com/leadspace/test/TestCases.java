@@ -80,13 +80,13 @@ public class TestCases {
     @Test
     public void treeConsumerWorkInParallel() throws Exception {
         ZonedDateTime from = ZonedDateTime.now();
-        ZonedDateTime to = ZonedDateTime.now().plusMinutes(1L);
+        ZonedDateTime to = ZonedDateTime.now().plusDays(1L);
         final long[] usage = {100};
         CreateTokenRequest request = getRequest(from, to, usage[0]);
         String token = httpClient.execute(createRequest(request), tokenResponseHandler);
         for (int i = 0; i < usage[0]; i++) {
-            workRequestProducer.send(new ProducerRecord<>("work-request-topic", 0, Integer.valueOf(i).toString(), token));
-            Thread.sleep(2000l);
+            workRequestProducer.send(new ProducerRecord<>("work-request-topic", i%3, token, Integer.valueOf(i).toString()));
+            //Thread.sleep(2000l);
         }
         Map<String, Integer> consumersUsage = new HashMap<>();
         while (usage[0] > 0) {

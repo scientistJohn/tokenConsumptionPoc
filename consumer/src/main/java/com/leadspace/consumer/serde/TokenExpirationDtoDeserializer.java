@@ -1,4 +1,4 @@
-package com.leadspace.consumer.kafka;
+package com.leadspace.consumer.serde;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
