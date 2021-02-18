@@ -6,8 +6,7 @@ import com.leadspace.consumer.service.Worker;
 
 public class Application {
 
-    public static void main(String[] args) throws InterruptedException {
-        Thread.sleep(20000L);
+    public static void main(String[] args) {
         String propertiesFile = args.length > 0 ? args[0] : "application.properties";
         PropertiesService propertiesService = PropertiesService.create(propertiesFile);
         Worker worker = new Worker(propertiesService.getWorkerConfigs());

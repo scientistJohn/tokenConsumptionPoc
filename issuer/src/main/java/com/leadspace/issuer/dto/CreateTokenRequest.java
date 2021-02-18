@@ -1,30 +1,16 @@
 package com.leadspace.issuer.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-
-import java.time.ZonedDateTime;
-
 public class CreateTokenRequest {
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss z")
-    private ZonedDateTime from;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss z")
-    private ZonedDateTime to;
+    private String token;
+    private Period period;
     private long usage;
 
-    public ZonedDateTime getFrom() {
-        return from;
+    public Period getPeriod() {
+        return period;
     }
 
-    public void setFrom(ZonedDateTime from) {
-        this.from = from;
-    }
-
-    public ZonedDateTime getTo() {
-        return to;
-    }
-
-    public void setTo(ZonedDateTime to) {
-        this.to = to;
+    public void setPeriod(Period period) {
+        this.period = period;
     }
 
     public long getUsage() {
@@ -33,5 +19,13 @@ public class CreateTokenRequest {
 
     public void setUsage(long usage) {
         this.usage = usage;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 }

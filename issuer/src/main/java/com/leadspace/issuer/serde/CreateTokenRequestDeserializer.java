@@ -1,28 +1,28 @@
-package com.leadspace.consumer.serde;
+package com.leadspace.issuer.serde;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.leadspace.consumer.dto.TokenExpirationDto;
+import com.leadspace.issuer.dto.CreateTokenRequest;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Deserializer;
 
-public class TokenExpirationDtoDeserializer implements Deserializer<TokenExpirationDto> {
+public class CreateTokenRequestDeserializer implements Deserializer<CreateTokenRequest> {
     private final ObjectMapper objectMapper = new ObjectMapper()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
     @Override
-    public TokenExpirationDto deserialize(String topic, byte[] data) {
+    public CreateTokenRequest deserialize(String topic, byte[] data) {
         try {
-            return objectMapper.readValue(data, TokenExpirationDto.class);
+            return objectMapper.readValue(data, CreateTokenRequest.class);
         } catch (Exception e) {
-            throw new RuntimeException("Cant serialize TokenExpirationDto for topic:" + topic);
+            throw new RuntimeException("Cant serialize WorkDoneDto for topic:" + topic);
         }
     }
 
     @Override
-    public TokenExpirationDto deserialize(String topic, Headers headers, byte[] data) {
+    public CreateTokenRequest deserialize(String topic, Headers headers, byte[] data) {
         return deserialize(topic, data);
     }
 

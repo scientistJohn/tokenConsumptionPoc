@@ -1,70 +1,64 @@
 package com.leadspace.issuer.kafka;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.leadspace.issuer.dto.TokenExpirationDto;
+import com.leadspace.issuer.config.RequestConsumerConfig;
+import com.leadspace.issuer.config.UsageConsumerConfigs;
+import com.leadspace.issuer.config.ValidTokenProducerConfigs;
+import com.leadspace.issuer.dto.CreateTokenRequest;
+import com.leadspace.issuer.serde.CreateTokenRequestDeserializer;
+import com.leadspace.issuer.service.TokenService;
+import com.leadspace.issuer.service.UsageService;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.header.Headers;
-import org.apache.kafka.common.serialization.Serializer;
+import org.apache.kafka.common.serialization.IntegerSerializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
-import java.util.Map;
+import java.util.Collections;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
-@Configuration
-public class KafkaFactory {
+public final class KafkaFactory {
 
-    @Bean
-    public Producer getProducer(@Value("${kafka.bootstrapServer}") String bootstrapServer,
-                                @Value("${kafka.clientId}") String clientId,
-                                @Value("${kafka.issuedTokenTopic}") String topic) {
-        KafkaProducer<String, TokenExpirationDto> producer = getKafkaProducer(bootstrapServer, clientId);
-        return new Producer(producer, topic);
+    private KafkaFactory() {
+        throw new UnsupportedOperationException();
     }
 
-    private KafkaProducer<String, TokenExpirationDto> getKafkaProducer(String bootstrapServer, String clientId) {
+    public static ValidTokenProducer getTokenValidationProducer(ValidTokenProducerConfigs configs) {
         Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-        props.put(ProducerConfig.CLIENT_ID_CONFIG, clientId);
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, configs.getBootstrapServer());
+        props.put(ProducerConfig.CLIENT_ID_CONFIG, configs.getClientId());
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, TokenExpirationDtoSerializer.class.getName());
-        return new KafkaProducer<>(props);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class.getName());
+        KafkaProducer<String, Integer> producer = new KafkaProducer<>(props);
+        return new ValidTokenProducer(producer, configs.getTopic());
     }
 
-    public static class TokenExpirationDtoSerializer implements Serializer<TokenExpirationDto> {
-
-        private ObjectMapper objectMapper = new ObjectMapper()
-                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
-        @Override
-        public byte[] serialize(String topic, TokenExpirationDto data) {
-            try {
-                return objectMapper.writeValueAsBytes(data);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Cant serialize TokenExpirationDto: " + data);
-            }
-        }
-
-        @Override
-        public void configure(Map<String, ?> configs, boolean isKey) {
-
-        }
-
-        @Override
-        public byte[] serialize(String topic, Headers headers, TokenExpirationDto data) {
-            return serialize(topic, data);
-        }
-
-        @Override
-        public void close() {
-        }
+    public static RequestConsumer getRequestsConsumer(RequestConsumerConfig config, TokenService tokenService) {
+        Properties consumerProps = new Properties();
+        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, config.getBootstrapServer());
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, config.getGroupId());
+        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CreateTokenRequestDeserializer.class.getName());
+        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        KafkaConsumer<String, CreateTokenRequest> consumer = new KafkaConsumer<>(consumerProps);
+        consumer.subscribe(Collections.singleton(config.getTopic()));
+        return new RequestConsumer(consumer, tokenService);
     }
+
+    public static UsageConsumer getUsageConsumer(UsageConsumerConfigs config, UsageService usageService, ExecutorService executorService) {
+        Properties consumerProps = new Properties();
+        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, config.getBootstrapServer());
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, config.getGroupId());
+        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps);
+        consumer.subscribe(Collections.singleton(config.getTopic()));
+        return new UsageConsumer(consumer, usageService, executorService);
+    }
+
+
 }

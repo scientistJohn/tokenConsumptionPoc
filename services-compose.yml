@@ -91,10 +91,9 @@ services:
       - kafka-3
     command: "bash -c 'echo Waiting for Kafka to be ready... && \
                                cub kafka-ready -b localhost:19092 1 20 && \
-                               kafka-topics --create --if-not-exists --zookeeper localhost:22181 --partitions 3 --replication-factor 1 --topic valid-token-topic && \
+                               kafka-topics --create --if-not-exists --zookeeper localhost:22181 --partitions 3 --replication-factor 1 --topic issued-token-topic && \
                                kafka-topics --create --if-not-exists --zookeeper localhost:22181 --partitions 3 --replication-factor 1 --topic used-token-topic && \
                                kafka-topics --create --if-not-exists --zookeeper localhost:22181 --partitions 3 --replication-factor 1 --topic work-request-topic && \
-                               kafka-topics --create --if-not-exists --zookeeper localhost:22181 --partitions 3 --replication-factor 1 --topic token-request-topic && \
                                kafka-topics --create --if-not-exists --zookeeper localhost:22181 --partitions 1 --replication-factor 1 --topic work-done-topic && \
                                echo Waiting 20 seconds for Connect to be ready... && \
                                sleep 5'"
@@ -103,3 +102,60 @@ services:
       # We override the image's `command` anyways, hence this container will not start a broker.
       KAFKA_BROKER_ID: ignored
       KAFKA_ZOOKEEPER_CONNECT: ignored
+
+  issuer:
+    network_mode: host
+    build:
+      context: issuer/
+      dockerfile: Dockerfile
+    ports:
+      - 48090:48090
+    extra_hosts:
+      - "moby:127.0.0.1"
+    depends_on:
+      - kafka-setup
+
+  consumer1:
+    network_mode: host
+    build:
+      context: consumer/
+      dockerfile: Dockerfile
+      args:
+        PROPS: props/consumer1.properties
+    depends_on:
+      - kafka-setup
+      - issuer
+    volumes:
+      - /home/aliashenko/workspace/tokenConsumtionPoc/props:/props:rw
+    extra_hosts:
+      - "moby:127.0.0.1"
+
+  consumer2:
+    network_mode: host
+    build:
+      context: consumer/
+      dockerfile: Dockerfile
+      args:
+        PROPS: props/consumer2.properties
+    depends_on:
+      - kafka-setup
+      - issuer
+    volumes:
+      - /home/aliashenko/workspace/tokenConsumtionPoc/props:/props:rw
+    extra_hosts:
+      - "moby:127.0.0.1"
+
+  consumer3:
+    network_mode: host
+    build:
+      context: consumer/
+      dockerfile: Dockerfile
+      args:
+        PROPS: props/consumer3.properties
+    depends_on:
+      - kafka-setup
+      - issuer
+    volumes:
+      - /home/aliashenko/workspace/tokenConsumtionPoc/props:/props:rw
+    extra_hosts:
+      - "moby:127.0.0.1"

@@ -36,11 +36,11 @@ public class PropertiesService {
     }
 
     public Topics getTopics() {
-        String issuedTokenTopic = props.getProperty("issuedTokenTopic");
+        String validTokenTopic = props.getProperty("validTokenTopic");
         String usedTokenTopic = props.getProperty("usedTokenTopic");
         String workRequestTopic = props.getProperty("workRequestTopic");
         String workDoneTopic = props.getProperty("workDoneTopic");
-        return new Topics(issuedTokenTopic, usedTokenTopic, workRequestTopic, workDoneTopic);
+        return new Topics(validTokenTopic, usedTokenTopic, workRequestTopic, workDoneTopic);
     }
 
     public WorkerConfigs getWorkerConfigs() {

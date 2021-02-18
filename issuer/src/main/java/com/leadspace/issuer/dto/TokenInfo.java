@@ -1,10 +1,11 @@
-package com.leadspace.consumer.dto;
+package com.leadspace.issuer.dto;
 
-public class TokenExpirationDto {
+public class TokenInfo {
     private String token;
     private long from;
     private long to;
     private long usage;
+    private Period period;
 
     public String getToken() {
         return token;
@@ -36,5 +37,13 @@ public class TokenExpirationDto {
 
     public void setUsage(long usage) {
         this.usage = usage;
+    }
+
+    public Period getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(Period period) {
+        this.period = period;
     }
 }

@@ -1,7 +1,6 @@
 plugins {
     id 'java'
-    id "org.springframework.boot" version "2.4.2"
-    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'application'
 }
 
 group 'com.leadspace'
@@ -12,6 +11,23 @@ repositories {
 }
 
 dependencies {
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web'
-    compile group: 'org.apache.kafka', name: 'kafka-clients', version: '2.7.0'
+    implementation group: 'org.apache.kafka', name: 'kafka-clients', version: '2.7.0'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.1'
+}
+
+application {
+    mainClass = 'com.leadspace.issuer.Application'
+}
+
+jar {
+    manifest {
+        attributes(
+                'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
+                'Main-Class': 'com.leadspace.issuer.Application'
+        )
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }
